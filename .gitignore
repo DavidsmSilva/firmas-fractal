@@ -1,0 +1,19 @@
+# Archivos multimedia y de desarrollo no necesarios en producción
+firma-demo.mp4
+video-base64.txt
+temp-clone/
+
+# Archivos fuente e imágenes (ya están en Base64 en el HTML)
+logo.png
+logo2.png
+
+# Plantillas y versiones antiguas (no necesarias)
+firma.html
+generador-firma.aspx
+convert-video.ps1
+
+# Archivos del sistema operativo y logs
+.DS_Store
+Thumbs.db
+*.log
+
