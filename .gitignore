@@ -1,19 +1,25 @@
-# Archivos multimedia y de desarrollo no necesarios en producción
+# Archivos multimedia grandes
 firma-demo.mp4
+/firma-tutorial-comprimida.mp4
 video-base64.txt
 temp-clone/
 
-# Archivos fuente e imágenes (ya están en Base64 en el HTML)
-logo.png
-logo2.png
+# Imagenes fuente en la raiz
+/logo.png
+/logo2.png
+/logo-blanco.png
+/logo-original.png
 
-# Plantillas y versiones antiguas (no necesarias)
+# Plantillas antiguas
 firma.html
 generador-firma.aspx
 convert-video.ps1
 
-# Archivos del sistema operativo y logs
+# Sistema
 .DS_Store
 Thumbs.db
 *.log
 
+# Servidor
+tarjetas-firmas-server/node_modules/
+tarjetas-firmas-server/.env

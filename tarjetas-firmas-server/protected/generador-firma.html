@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Firmas - Fractal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* ── Barra de usuario autenticado ── */
+        .auth-bar {
+            max-width: 1200px;
+            margin: 0 auto 20px auto;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .auth-bar-user {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .auth-bar-user svg {
+            flex-shrink: 0;
+        }
+
+        .auth-bar-user .user-name {
+            font-weight: 600;
+            color: #1e3a6e;
+        }
+
+        .auth-bar-user .user-email {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .auth-bar-logout {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: none;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            color: #666;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'Montserrat', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .auth-bar-logout:hover {
+            background: #fff0f0;
+            border-color: #ff6b6b;
+            color: #d32f2f;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .form-section,
+        .preview-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            min-width: 0;
+        }
+
+        @media (max-width: 850px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .form-section,
+            .preview-section {
+                padding: 20px;
+            }
+
+            body {
+                padding: 10px;
+            }
+
+            .auth-bar {
+                flex-direction: column;
+                gap: 8px;
+                text-align: center;
+            }
+
+            .auth-bar-user {
+                flex-direction: column;
+                gap: 4px;
+            }
+        }
+
+        h2 {
+            color: #343265;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid hsl(16, 100%, 60%);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #343265;
+        }
+
+        input::placeholder {
+            color: #aaa;
+            font-style: italic;
+        }
+
+        .upload-photo-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 12px;
+            background: #f0f4f8;
+            color: #343265;
+            border: 2px dashed #343265;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 0;
+            transition: background 0.2s;
+        }
+
+        .upload-photo-btn:hover {
+            background: #e0e8f0;
+            color: #343265;
+        }
+
+        .upload-photo-btn.has-photo {
+            border-style: solid;
+            border-color: #2AA539;
+            background: #f0faf1;
+            color: #2AA539;
+        }
+
+        /* ── Crop Modal ── */
+        #cropModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.82);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .crop-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 24px;
+            width: min(480px, 92vw);
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+        }
+
+        .crop-title {
+            color: #343265;
+            margin: 0 0 16px;
+            font-size: 16px;
+            font-weight: 700;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .crop-hint {
+            color: #888;
+            font-size: 11px;
+            font-family: 'Montserrat', sans-serif;
+            margin: 0 0 10px;
+        }
+
+        .crop-canvas-wrap {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            background: #1a1a1a;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 16px;
+            cursor: grab;
+        }
+
+        .crop-canvas-wrap:active {
+            cursor: grabbing;
+        }
+
+        #cropCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .crop-zoom-label {
+            display: block;
+            color: #555;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'Montserrat', sans-serif;
+            margin-bottom: 6px;
+        }
+
+        #cropZoom {
+            width: 100%;
+            accent-color: #343265;
+            margin-bottom: 16px;
+            cursor: pointer;
+        }
+
+        .crop-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .crop-btn-cancel,
+        .crop-btn-apply {
+            padding: 10px 22px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
+            width: auto;
+            margin-bottom: 0;
+        }
+
+        .crop-btn-cancel {
+            background: #eee;
+            color: #333;
+        }
+
+        .crop-btn-cancel:hover {
+            background: #ddd;
+            color: #333;
+        }
+
+        .crop-btn-apply {
+            background: #343265;
+            color: #fff;
+        }
+
+        .crop-btn-apply:hover {
+            background: #2a2852;
+            color: #fff;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #343265;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background: #2a4a8e;
+        }
+
+        button.secondary {
+            background: #E9521D;
+        }
+
+        button.secondary:hover {
+            background: #e55a2b;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .preview-box {
+            border: 2px dashed #ddd;
+            padding: 0;
+            min-height: 150px;
+            background: #ffffff;
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .preview-placeholder {
+            color: #999;
+        }
+
+        .actions {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .actions button {
+            flex: 1 1 45%;
+            min-width: 140px;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .file-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .section-divider {
+            border-top: 1px solid #eee;
+            margin: 20px 0;
+            padding-top: 20px;
+        }
+
+        .video-tutorial {
+            margin-bottom: 20px;
+            background: #f0f4f8;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #dce4ec;
+        }
+
+        .video-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #343265;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 5px;
+            background: #000;
+        }
+
+        .video-container iframe,
+        .video-container video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ─── Barra de usuario autenticado ─── -->
+    <div class="auth-bar" id="authBar">
+        <div class="auth-bar-user">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1e3a6e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+            </svg>
+            <div>
+                <span class="user-name" id="userName">Cargando...</span>
+                <span class="user-email" id="userEmail"></span>
+            </div>
+        </div>
+        <a href="/auth/logout" class="auth-bar-logout">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Cerrar sesión
+        </a>
+    </div>
+
+    <div class="container">
+        <div class="form-section">
+            <h2>Datos de la Firma</h2>
+            <form id="firmaForm">
+                <div class="form-group">
+                    <label for="nombre">Nombre Completo *</label>
+                    <input type="text" id="nombre" required placeholder="Julian Andrés Granada Vásquez">
+                </div>
+                <div class="form-group">
+                    <label for="rol">Rol / Cargo *</label>
+                    <input type="text" id="rol" required placeholder="Líder de TI">
+                </div>
+                <div class="form-group">
+                    <label for="correo">Correo Electrónico *</label>
+                    <input type="email" id="correo" required placeholder="julian.granada@estrategiasfractal.com">
+                </div>
+                <div class="form-group">
+                    <label for="telefono">Número Telefónico *</label>
+                    <input type="tel" id="telefono" required placeholder="+57 3012602167">
+                </div>
+                <div class="form-group">
+                    <label for="linkedin">LinkedIn *</label>
+                    <input type="url" id="linkedin" required
+                        placeholder="https://co.linkedin.com/company/fractal-estrategias-sostenibles">
+                </div>
+
+                <div class="section-divider">
+                    <h3 style="color: #343265; margin-bottom: 15px; font-size: 16px;">Imágenes</h3>
+
+                    <div class="form-group">
+                        <label>Foto Profesional</label>
+                        <input type="file" id="photoFile" accept="image/*" style="display:none;">
+                        <button type="button" id="uploadPhotoBtn" class="upload-photo-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                            <span id="uploadBtnText">Subir foto</span>
+                        </button>
+                        <div id="photoPreview"
+                            style="display:none; align-items:center; gap:10px; margin-top:8px; padding:8px 12px; background:#f0faf1; border-radius:6px; border:1px solid #a3d9aa;">
+                            <img id="photoPreviewImg" src="" alt="preview"
+                                style="width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid #2AA539; flex-shrink:0;">
+                            <span
+                                style="font-size:12px; color:#2AA539; font-weight:600; font-family:'Montserrat',sans-serif;">Foto
+                                lista ✓</span>
+                            <button type="button" id="removePhotoBtn"
+                                style="margin-left:auto; background:none; border:none; cursor:pointer; color:#888; font-size:12px; padding:2px 8px; width:auto; margin-bottom:0; border-radius:4px; font-family:'Montserrat',sans-serif;">Cambiar</button>
+                        </div>
+                    </div>
+
+
+                </div>
+
+                <button type="submit" id="generarBtn">Generar Firma</button>
+            </form>
+        </div>
+        <div class="preview-section">
+            <div class="video-tutorial">
+                <p class="video-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                    </svg>
+                    ¿Cómo usar el generador?
+                </p>
+                <div class="video-container">
+                    <video controls preload="metadata">
+                        <source
+                            src="/protected/firma-tutorial-comprimida.mp4"
+                            type="video/mp4">
+                        Tu navegador no soporta el reproductor de video.
+                    </video>
+                </div>
+            </div>
+
+            <h2 style="margin-top: 10px;">Vista Previa</h2>
+            <div class="success-message" id="successMessage">¡Firma generada exitosamente!</div>
+            <div class="preview-box" id="previewBox">
+                <iframe id="previewIframe" style="border: none; background: white; transition: all 0.3s ease;"></iframe>
+                <p class="preview-placeholder" id="previewPlaceholder">Llena el formulario y genera la firma</p>
+            </div>
+            <div class="actions">
+                <button id="copyBtn" class="secondary" disabled>Copiar Firma</button>
+                <button id="downloadImgBtn" disabled>Descargar Imagen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Photo Crop Modal -->
+    <div id="cropModal">
+        <div class="crop-card">
+            <p class="crop-title">Ajustar foto de perfil</p>
+            <p class="crop-hint">Arrastrá para reposicionar · Usá el slider para zoom</p>
+            <div class="crop-canvas-wrap" id="cropCanvasWrap">
+                <canvas id="cropCanvas"></canvas>
+            </div>
+            <label class="crop-zoom-label">Zoom</label>
+            <input type="range" id="cropZoom" min="100" max="400" value="100">
+            <div class="crop-actions">
+                <button type="button" id="cropCancel" class="crop-btn-cancel">Cancelar</button>
+                <button type="button" id="cropApply" class="crop-btn-apply">Aplicar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ─── Cargar info del usuario autenticado ─────────────────────────
+        (async function loadUserInfo() {
+            try {
+                const res = await fetch('/api/me');
+                if (!res.ok) {
+                    // Si no responde, redirigir al login
+                    window.location.href = '/auth/login';
+                    return;
+                }
+                const user = await res.json();
+                document.getElementById('userName').textContent = user.name || 'Usuario';
+                document.getElementById('userEmail').textContent = user.email || '';
+            } catch (err) {
+                console.error('Error al cargar info del usuario:', err);
+            }
+        })();
+
+let generatedHtml = '';
+        let currentPhotoDataUrl = '';
+        let currentLogoDataUrl = '';
+
+        // ── PHOTO UPLOAD & CROPPER ────────────────────────────────────
+        const CANVAS_SIZE = 400;
+        const OUTPUT_SIZE = 500;
+        let cropImg = null, cropScale = 1, cropBaseScale = 1;
+        let cropOffsetX = 0, cropOffsetY = 0;
+        let isDragging = false;
+        let dragStartX = 0, dragStartY = 0, dragOffX = 0, dragOffY = 0;
+        let croppedDataUrl = '';
+
+        // Init canvas resolution once
+        (function () {
+            const c = document.getElementById('cropCanvas');
+            c.width = CANVAS_SIZE;
+            c.height = CANVAS_SIZE;
+        })();
+
+        function renderCrop() {
+            const canvas = document.getElementById('cropCanvas');
+            const ctx = canvas.getContext('2d');
+            const W = CANVAS_SIZE, H = CANVAS_SIZE, R = W / 2 - 14;
+            ctx.clearRect(0, 0, W, H);
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, W, H);
+            if (!cropImg) return;
+            const iw = cropImg.width * cropScale;
+            const ih = cropImg.height * cropScale;
+            ctx.drawImage(cropImg, W / 2 - iw / 2 + cropOffsetX, H / 2 - ih / 2 + cropOffsetY, iw, ih);
+            // Dark overlay + circle hole
+            ctx.save();
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.beginPath();
+            ctx.rect(0, 0, W, H);
+            ctx.arc(W / 2, H / 2, R, 0, Math.PI * 2, true);
+            ctx.fill('evenodd');
+            ctx.restore();
+            // Circle border
+            ctx.beginPath();
+            ctx.arc(W / 2, H / 2, R, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function canvasPoint(e) {
+            const c = document.getElementById('cropCanvas');
+            const r = c.getBoundingClientRect();
+            const sx = CANVAS_SIZE / r.width, sy = CANVAS_SIZE / r.height;
+            const src = e.touches ? e.touches[0] : e;
+            return { x: (src.clientX - r.left) * sx, y: (src.clientY - r.top) * sy };
+        }
+
+        const cropCanvas = document.getElementById('cropCanvas');
+        cropCanvas.addEventListener('mousedown', e => {
+            e.preventDefault(); isDragging = true;
+            const p = canvasPoint(e);
+            dragStartX = p.x; dragStartY = p.y;
+            dragOffX = cropOffsetX; dragOffY = cropOffsetY;
+        });
+        cropCanvas.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            const p = canvasPoint(e);
+            cropOffsetX = dragOffX + (p.x - dragStartX);
+            cropOffsetY = dragOffY + (p.y - dragStartY);
+            renderCrop();
+        });
+        cropCanvas.addEventListener('mouseup', () => isDragging = false);
+        cropCanvas.addEventListener('mouseleave', () => isDragging = false);
+        cropCanvas.addEventListener('touchstart', e => {
+            e.preventDefault(); isDragging = true;
+            const p = canvasPoint(e);
+            dragStartX = p.x; dragStartY = p.y;
+            dragOffX = cropOffsetX; dragOffY = cropOffsetY;
+        }, { passive: false });
+        cropCanvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            if (!isDragging) return;
+            const p = canvasPoint(e);
+            cropOffsetX = dragOffX + (p.x - dragStartX);
+            cropOffsetY = dragOffY + (p.y - dragStartY);
+            renderCrop();
+        }, { passive: false });
+        cropCanvas.addEventListener('touchend', () => isDragging = false);
+
+        document.getElementById('cropZoom').addEventListener('input', function () {
+            cropScale = cropBaseScale * (this.value / 100);
+            renderCrop();
+        });
+
+        document.getElementById('cropCancel').addEventListener('click', () => {
+            document.getElementById('cropModal').style.display = 'none';
+        });
+
+        document.getElementById('cropApply').addEventListener('click', () => {
+            const off = document.createElement('canvas');
+            off.width = OUTPUT_SIZE; off.height = OUTPUT_SIZE;
+            const ctx = off.getContext('2d');
+            const ratio = OUTPUT_SIZE / CANVAS_SIZE;
+            const iw = cropImg.width * cropScale * ratio;
+            const ih = cropImg.height * cropScale * ratio;
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
+            ctx.drawImage(cropImg,
+                OUTPUT_SIZE / 2 - iw / 2 + cropOffsetX * ratio,
+                OUTPUT_SIZE / 2 - ih / 2 + cropOffsetY * ratio,
+                iw, ih);
+            croppedDataUrl = off.toDataURL('image/jpeg', 0.95);
+            document.getElementById('photoPreviewImg').src = croppedDataUrl;
+            document.getElementById('photoPreview').style.display = 'flex';
+            document.getElementById('uploadPhotoBtn').classList.add('has-photo');
+            document.getElementById('uploadBtnText').textContent = 'Cambiar foto';
+            document.getElementById('cropModal').style.display = 'none';
+        });
+
+        function openCropModal(file) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = new Image();
+                img.onload = () => {
+                    cropImg = img;
+                    cropBaseScale = ((CANVAS_SIZE - 28)) / Math.min(img.width, img.height);
+                    cropScale = cropBaseScale;
+                    cropOffsetX = 0; cropOffsetY = 0;
+                    document.getElementById('cropZoom').value = 100;
+                    document.getElementById('cropModal').style.display = 'flex';
+                    renderCrop();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        document.getElementById('uploadPhotoBtn').addEventListener('click', () =>
+            document.getElementById('photoFile').click()
+        );
+        document.getElementById('photoFile').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) openCropModal(file);
+            this.value = '';
+        });
+        document.getElementById('removePhotoBtn').addEventListener('click', () => {
+            croppedDataUrl = '';
+            cropImg = null;
+            document.getElementById('photoPreview').style.display = 'none';
+            document.getElementById('uploadPhotoBtn').classList.remove('has-photo');
+            document.getElementById('uploadBtnText').textContent = 'Subir foto';
+        });
+
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+
+
+        // Generate frame SVG as base64
+        function generateFrameBase64() {
+            const svg = `<svg width="320" height="320" xmlns="http://www.w3.org/2000/svg">
+                <rect width="320" height="320" fill="white"/>
+                <circle cx="160" cy="160" r="148" fill="none" stroke="#2AA539" stroke-width="10" stroke-dasharray="692 248" stroke-linecap="round" transform="rotate(-90 160 160)"/>
+                <circle cx="160" cy="160" r="148" fill="none" stroke="#343265" stroke-width="10" stroke-dasharray="297 643" stroke-linecap="round" transform="rotate(70 160 160)"/>
+                <circle cx="160" cy="160" r="148" fill="none" stroke="#E9521D" stroke-width="8" stroke-dasharray="160 716" stroke-linecap="round" transform="rotate(200 160 160)" opacity="0.8"/>
+            </svg>`;
+            return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+        }
+
+        // Combine frame and photo
+        function combineFrameAndPhoto(frameSrc, photoSrc) {
+            return new Promise((resolve, reject) => {
+                const frameImg = new Image();
+                const photoImg = new Image();
+                let loaded = 0;
+
+                const checkComplete = () => {
+                    loaded++;
+                    if (loaded < 2) return;
+
+                    try {
+                        const size = 320;
+                        const canvas = document.createElement('canvas');
+                        canvas.width = size;
+                        canvas.height = size;
+                        const ctx = canvas.getContext('2d');
+
+                        ctx.clearRect(0, 0, size, size);
+
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+                        ctx.drawImage(frameImg, 0, 0, size, size);
+
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.arc(size / 2, size / 2, size / 2 - 16, 0, Math.PI * 2);
+                        ctx.closePath();
+                        ctx.clip();
+
+                        const photoAspect = photoImg.width / photoImg.height;
+                        let drawWidth, drawHeight, drawX, drawY;
+
+                        if (photoAspect > 1) {
+                            drawHeight = size;
+                            drawWidth = size * photoAspect;
+                            drawX = (size - drawWidth) / 2;
+                            drawY = 0;
+                        } else {
+                            drawWidth = size;
+                            drawHeight = size / photoAspect;
+                            drawX = 0;
+                            drawY = (size - drawHeight) / 2;
+                        }
+
+                        ctx.drawImage(photoImg, drawX, drawY, drawWidth, drawHeight);
+                        ctx.restore();
+
+                        ctx.beginPath();
+                        ctx.arc(size / 2, size / 2, size / 2 - 16, 0, Math.PI * 2);
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 6;
+                        ctx.stroke();
+
+                        resolve(canvas.toDataURL('image/png'));
+                    } catch (e) {
+                        reject(e);
+                    }
+                };
+
+                frameImg.onload = checkComplete;
+                frameImg.onerror = reject;
+                frameImg.src = frameSrc;
+
+                photoImg.onload = checkComplete;
+                photoImg.onerror = reject;
+                photoImg.src = photoSrc;
+            });
+        }
+
+        // Generate firma HTML
+        document.getElementById('firmaForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const nombre = document.getElementById('nombre').value.trim();
+            const rol = document.getElementById('rol').value.trim();
+            const correo = document.getElementById('correo').value.trim();
+            let telefono = document.getElementById('telefono').value.trim();
+            const linkedin = document.getElementById('linkedin').value.trim();
+
+            if (!telefono.startsWith('+')) {
+                telefono = '+57 ' + telefono;
+            }
+            if (!croppedDataUrl) {
+                alert('Selecciona y ajusta la foto de perfil primero.');
+                return;
+            }
+            const photoDataUrl = croppedDataUrl;
+
+            const logoDataUrl = 'data:image/png;base64,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';
+            const frameSrc = generateFrameBase64();
+            const combinedPhotoSrc = await combineFrameAndPhoto(frameSrc, photoDataUrl);
+
+            generatedHtml = generateFirmaHtml(nombre, rol, correo, telefono, linkedin, combinedPhotoSrc, logoDataUrl);
+
+            const iframe = document.getElementById('previewIframe');
+            const placeholder = document.getElementById('previewPlaceholder');
+            iframe.srcdoc = generatedHtml;
+            iframe.style.display = 'block';
+            placeholder.style.display = 'none';
+
+            iframe.onload = function () {
+                const iframeDoc = iframe.contentDocument;
+                const firmaTable = iframeDoc.querySelector('table');
+                if (firmaTable) {
+                    iframe.style.width = firmaTable.offsetWidth + 'px';
+                }
+            };
+
+            document.getElementById('successMessage').style.display = 'block';
+            document.getElementById('copyBtn').disabled = false;
+            document.getElementById('downloadImgBtn').disabled = false;
+            document.getElementById('downloadPhotoBtn').disabled = false;
+
+            currentPhotoDataUrl = combinedPhotoSrc;
+            currentLogoDataUrl = logoDataUrl;
+        });
+
+        function generateFirmaHtml(nombre, rol, correo, telefono, linkedin, photoSrc, logoSrc) {
+            return `<!DOCTYPE html>
+<html xmlns="https://www.w3.org/1999/xhtml">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Firma</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+.firma-container { width: 100%; max-width: 600px; }
+.firma-row { display: table-row; }
+.firma-cell { display: table-cell; vertical-align: middle; }
+.firma-pillars { display: none; }
+@media screen and (max-width: 500px) {
+    .firma-container { min-width: 280px !important; }
+    .firma-info .nombre { font-size: 14px !important; }
+    .firma-info .rol { font-size: 8px !important; padding: 1px 6px !important; }
+    .firma-info .contacto { font-size: 10px !important; }
+    .firma-pillars { display: table-cell !important; vertical-align: middle; width: 70px !important; }
+    .firma-pillars table { font-size: 7px !important; }
+    .firma-foto img { width: 70px !important; height: 70px !important; }
+}
+@media screen and (max-width: 350px) {
+    .firma-container { min-width: 250px !important; }
+    .firma-info .nombre { font-size: 12px !important; }
+    .firma-pillars { display: none !important; }
+}
+</style>
+<!--[if mso]>
+<style type="text/css">
+table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+td { border-collapse: collapse; }
+</style>
+<![endif]-->
+</head>
+<body style="margin:0; padding:0; background-color:#ffffff; font-family:'Montserrat',Arial,sans-serif;">
+<table cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="background-color:#ffffff;">
+<tr>
+<td style="padding:0; background-color:#ffffff;">
+<table cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="background-color:#ffffff;">
+<tr>
+<td style="background:#2AA539;height:6px;font-size:0;line-height:0;">&nbsp;</td>
+<td style="background:#343265;height:6px;font-size:0;line-height:0;">&nbsp;</td>
+<td style="background:#E9521D;height:6px;font-size:0;line-height:0;">&nbsp;</td>
+</tr>
+<tr>
+<td colspan="3" style="padding:0; background-color:#ffffff;">
+<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; background-color:#ffffff;">
+<tr>
+<td width="90" style="vertical-align:middle;text-align:center;padding:5px; background-color:#ffffff;">
+<img src="${photoSrc}" alt="Foto" width="90" height="90" style="display:block;border:0;margin:0 auto;">
+</td>
+<td style="vertical-align:middle;padding:5px;border-left:2px solid #e8e8e8; background-color:#ffffff;">
+<table cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="background-color:#ffffff;">
+<tr>
+<td style="padding-bottom:2px; background-color:#ffffff;"><span style="font-family:'Montserrat',Arial,sans-serif;font-size:16px;font-weight:bold;color:#343265;">${nombre}</span></td>
+</tr>
+<tr>
+<td style="padding-bottom:3px; background-color:#ffffff;"><span style="font-family:'Montserrat',Arial,sans-serif;display:inline-block;background:#E9521D;color:#ffffff;padding:2px 8px;border-radius:6px;font-size:9px;font-weight:600;text-transform:uppercase;">${rol}</span></td>
+</tr>
+<tr>
+<td style="padding:4px 0; background-color:#ffffff;">
+<table cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="background-color:#ffffff;"><tr>
+<td width="16" style="vertical-align:middle; background-color:#ffffff;"><img src="https://cdn-icons-png.flaticon.com/512/733/733585.png" width="12" height="12" style="display:block;border:0;"></td>
+<td style="vertical-align:middle; background-color:#ffffff; font-family:'Montserrat',Arial,sans-serif;"><a href="https://wa.me/${telefono.replace(/\D/g, '')}" style="color:#343265;text-decoration:none;font-size:11px;line-height:1.5;">${telefono}</a></td>
+</tr></table>
+</td>
+</tr>
+<tr>
+<td style="padding:4px 0; background-color:#ffffff;">
+<table cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="background-color:#ffffff;"><tr>
+<td width="16" style="vertical-align:middle; background-color:#ffffff;"><img src="https://cdn-icons-png.flaticon.com/512/542/542638.png" width="12" height="12" style="display:block;border:0;"></td>
+<td style="vertical-align:middle;padding-left:4px; background-color:#ffffff; font-family:'Montserrat',Arial,sans-serif;"><a href="mailto:${correo}" style="color:#343265;text-decoration:none;font-size:11px;line-height:1.5;">${correo}</a></td>
+</tr></table>
+</td>
+</tr>
+<tr>
+<td style="padding:4px 0; background-color:#ffffff;">
+<table cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="background-color:#ffffff;"><tr>
+<td width="16" style="vertical-align:middle; background-color:#ffffff;"><img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="12" height="12" style="display:block;border:0;"></td>
+<td style="vertical-align:middle; background-color:#ffffff; font-family:'Montserrat',Arial,sans-serif;"><a href="${linkedin}" style="color:#343265;text-decoration:none;font-size:11px;line-height:1.5;">LinkedIn</a></td>
+</tr></table>
+</td>
+</tr>
+</table>
+</td>
+<td style="vertical-align:middle;padding:5px;border-left:2px solid #e8e8e8; background-color:#ffffff;">
+<table cellpadding="0" cellspacing="15" border="0" bgcolor="#ffffff" style="background-color:#ffffff;">
+<tr>
+<td style="font-family:'Montserrat',Arial,sans-serif;font-size:9px;color:#2AA539;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;padding:2px 6px;line-height:1.2;text-align:right;border-right:3px solid #2AA539; background-color:#e8f4f2;">Sostenibilidad</td>
+</tr>
+<tr>
+<td style="font-family:'Montserrat',Arial,sans-serif;font-size:9px;color:#343265;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;padding:2px 6px;line-height:1.2;text-align:right;border-right:3px solid #343265; background-color:#e8edf4;">Estrategia <br>Corporativa</td>
+</tr>
+<tr>
+<td style="font-family:'Montserrat',Arial,sans-serif;font-size:9px;color:#E9521D;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;padding:2px 6px;line-height:1.2;text-align:right;border-right:3px solid #E9521D; background-color:#fce8e1;">Operaciones</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td colspan="3" style="background:#343265;padding:3px 0;">
+<table cellpadding="0" cellspacing="0" border="0" bgcolor="#343265" width="100%" style="background-color:#343265;">
+<tr>
+<td style="line-height:0;font-size:0;width:80px;min-width:80px;padding-left:5px;"><img src="${logoSrc}" alt="Estrategias Fractal" width="100" height="40" style="display:inline-block;border:0;"></td>
+<td width="100%" style="text-align:right;vertical-align:middle;padding-right:20px; font-family:'Montserrat',Arial,sans-serif;"><a href="https://www.estrategiasfractal.com/" style="color:#ffffff;font-size:9px;font-weight:600;text-decoration:none;">www.estrategiasfractal.com</a><br><a href="https://www.estrategiasfractal.com/politicadetratamientodedatosfractal" style="color:#bbbbbb;font-size:7px;text-decoration:none;">Aviso de confidencialidad</a></td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</body>
+</html>`;
+        }
+
+        function downloadPhoto(dataUrl, filename) {
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = filename;
+            link.click();
+        }
+
+        document.getElementById('copyBtn').addEventListener('click', async function () {
+            try {
+                if (!generatedHtml) {
+                    alert('Genera la firma primero.');
+                    return;
+                }
+
+                const blob = new Blob([generatedHtml], { type: 'text/html' });
+                const iframe = document.getElementById('previewIframe');
+                const textBlob = new Blob([iframe.contentDocument ? iframe.contentDocument.body.innerText : 'Firma de correo'], { type: 'text/plain' });
+
+                await navigator.clipboard.write([
+                    new ClipboardItem({ 'text/html': blob, 'text/plain': textBlob })
+                ]);
+
+                alert('¡Firma copiada! Listo para pegar en tu correo.');
+            } catch (err) {
+                try {
+                    const iframe = document.getElementById('previewIframe');
+                    const range = document.createRange();
+                    range.selectNodeContents(iframe.contentDocument.body);
+                    window.getSelection().removeAllRanges();
+                    window.getSelection().addRange(range);
+                    document.execCommand('copy');
+                    window.getSelection().removeAllRanges();
+                    alert('¡Firma copiada!');
+                } catch (e) {
+                    alert('Tu navegador no permite copiar. Usa Descargar Imagen.');
+                }
+            }
+        });
+
+        document.getElementById('downloadImgBtn').addEventListener('click', async function () {
+            const nombre = document.getElementById('nombre').value.trim();
+            const iframe = document.getElementById('previewIframe');
+            const iframeDoc = iframe.contentDocument;
+
+            try {
+                const body = iframeDoc.body;
+                body.style.margin = '0';
+                body.style.padding = '0';
+                body.style.overflow = 'hidden';
+
+                const contentWidth = body.scrollWidth;
+                const contentHeight = body.scrollHeight;
+
+                const canvas = await html2canvas(body, {
+                    backgroundColor: '#ffffff',
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    width: contentWidth,
+                    height: contentHeight,
+                    x: 0,
+                    y: 0,
+                    scrollX: 0,
+                    scrollY: 0,
+                    windowWidth: contentWidth,
+                    windowHeight: contentHeight
+                });
+
+                const link = document.createElement('a');
+                link.href = canvas.toDataURL('image/png');
+                link.download = `firma_${nombre.toLowerCase().replace(/\s+/g, '_')}.png`;
+                link.click();
+            } catch (err) {
+                alert('Error al generar imagen. Intenta copiar la firma directamente.');
+            }
+        });
+
+        document.getElementById('downloadPhotoBtn').addEventListener('click', function () {
+            const nombre = document.getElementById('nombre').value.trim();
+            if (currentPhotoDataUrl) {
+                downloadPhoto(currentPhotoDataUrl, `foto_${nombre.toLowerCase().replace(/\s+/g, '_')}.jpg`);
+            }
+        });
+    </script>
+</body>
+
+</html>
