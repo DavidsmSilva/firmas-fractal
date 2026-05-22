@@ -15,9 +15,12 @@ const app = express();
 
 app.use(express.urlencoded({ extended: true }));
 
-// ─── Logo público ────────────────────────────────────────────────────────────
+// ─── Logos públicos ──────────────────────────────────────────────────────────
 app.get('/logo.png', (req, res) => {
     res.sendFile(path.join(__dirname, 'logo.png'));
+});
+app.get('/logo-blanco.png', (req, res) => {
+    res.sendFile(path.join(__dirname, 'logo-blanco.png'));
 });
 
 // ─── Modo desarrollo ─────────────────────────────────────────────────────────
