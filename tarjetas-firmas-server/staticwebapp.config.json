@@ -2,17 +2,32 @@
   "navigationFallback": "/generador-firma.html",
   "routes": [
     {
-      "route": "/generador-firma.html",
-      "allowedRoles": ["authenticated"]
-    },
-    {
-      "route": "/protected/*",
-      "allowedRoles": ["authenticated"]
-    },
-    {
-      "route": "/api/*",
+      "route": "/*",
       "allowedRoles": ["authenticated"]
     }
+  ],
+  "responseOverrides": {
+    "401": {
+      "redirect": "/.auth/login/aad?post_login_redirect_uri=/generador-firma.html"
+    }
+  },
+  "globalHeaders": {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Content-Security-Policy": "default-src 'self' https://*.microsoft.com https://*.azurewebsites.net https://firma.estrategiasfractal.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://cdn-icons-png.flaticon.com https://static.wixstatic.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com"
+  },
+  "auth": {
+    "identityProviders": {
+      "azureActiveDirectory": {
+        "registration": {
+          "openIdIssuer": "https://login.microsoftonline.com/6cf449e1-48ba-466f-8c91-4af9cd491a58/v2.0",
+          "clientIdSettingName": "AZURE_CLIENT_ID",
+          "clientSecretSettingName": "AZURE_CLIENT_SECRET"
+        }
+      }
+    }
+  }
+}
   ],
   "responseOverrides": {
     "401": {
@@ -28,7 +43,7 @@
     "identityProviders": {
       "azureActiveDirectory": {
         "registration": {
-          "openIdIssuer": "https://login.microsoftonline.com/{{TENANT_ID}}/v2.0",
+          "openIdIssuer": "https://login.microsoftonline.com/6cf449e1-48ba-466f-8c91-4af9cd491a58/v2.0",
           "clientIdSettingName": "AZURE_CLIENT_ID",
           "clientSecretSettingName": "AZURE_CLIENT_SECRET"
         }
