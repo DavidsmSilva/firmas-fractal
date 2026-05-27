@@ -29,5 +29,5 @@
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Content-Security-Policy": "default-src 'self' https://*.microsoft.com https://*.azurewebsites.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://cdn-icons-png.flaticon.com https://static.wixstatic.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com"
-  },
+  }
 }
