@@ -565,25 +565,15 @@
                     return;
                 }
 
-                // Validar que sea del tenant correcto (@estrategiasfractal.com)
-                const TENANT_ID = '751504e2-fdcc-4a03-8654-f8b4519e2270';
-                const tidClaim = (user.claims || []).find(c => c.typ === 'tid');
-                if (!tidClaim || tidClaim.val !== TENANT_ID) {
-                    // No autorizado — mostrar mensaje con diagnostico completo
-                    const emailClaim = (user.claims || []).find(c => c.typ === 'email' || c.typ === 'preferred_username');
-                    const email = emailClaim ? emailClaim.val : 'desconocido';
-                    const tid = tidClaim ? tidClaim.val : 'sin tid';
-                    const name = user.name || 'desconocido';
-                    const rawJson = JSON.stringify(data, null, 2);
+                // Validar que sea del dominio @estrategiasfractal.com
+                const email = user.userDetails || '';
+                if (!email.endsWith('@estrategiasfractal.com')) {
                     document.body.innerHTML = `
                         <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:Montserrat,sans-serif;background:#f5f5f5;">
-                            <div style="text-align:center;background:white;padding:40px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1);max-width:600px;">
+                            <div style="text-align:center;background:white;padding:40px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1);max-width:400px;">
                                 <div style="font-size:48px;margin-bottom:16px;">🔒</div>
                                 <h1 style="color:#1e3a6e;margin-bottom:8px;">Acceso no autorizado</h1>
-                                <p style="color:#666;margin-bottom:16px;">Solo usuarios de <strong>@estrategiasfractal.com</strong> pueden usar esta aplicación.</p>
-                                <div style="background:#f8f9fa;border-radius:8px;padding:16px;margin-bottom:20px;text-align:left;font-size:12px;color:#555;max-height:300px;overflow:auto;white-space:pre-wrap;font-family:monospace;">
-                                    ${rawJson}
-                                </div>
+                                <p style="color:#666;margin-bottom:24px;">Solo usuarios de <strong>@estrategiasfractal.com</strong> pueden usar esta aplicación.</p>
                                 <a href="/.auth/logout" style="display:inline-block;padding:10px 24px;background:#1e3a6e;color:white;border-radius:8px;text-decoration:none;font-weight:600;">Cerrar sesión</a>
                             </div>
                         </div>
@@ -591,11 +581,12 @@
                     return;
                 }
 
-                document.getElementById('userName').textContent = user.name || 'Usuario';
+                // Extraer nombre del email (parte antes del @)
+                const userName = email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                document.getElementById('userName').textContent = userName;
 
-                // Buscar email en los claims
-                const emailClaim = (user.claims || []).find(c => c.typ === 'email' || c.typ === 'preferred_username');
-                document.getElementById('userEmail').textContent = emailClaim ? emailClaim.val : '';
+                // Mostrar email
+                document.getElementById('userEmail').textContent = email;
             } catch (err) {
                 console.error('Error al cargar info del usuario:', err);
             }
