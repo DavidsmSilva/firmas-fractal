@@ -1,5 +1,7 @@
 {
-  "navigationFallback": "/generador-firma.html",
+  "navigationFallback": {
+    "rewrite": "/generador-firma.html"
+  },
   "routes": [
     {
       "route": "/generador-firma.html",
