@@ -1,8 +1,15 @@
 {
-  "navigationFallback": {
-    "rewrite": "/generador-firma.html"
-  },
   "routes": [
+    {
+      "route": "/",
+      "redirect": "/generador-firma.html",
+      "statusCode": 302
+    },
+    {
+      "route": "/index.html",
+      "redirect": "/generador-firma.html",
+      "statusCode": 302
+    },
     {
       "route": "/generador-firma.html",
       "allowedRoles": ["authenticated"]
