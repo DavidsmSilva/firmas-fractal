@@ -565,25 +565,8 @@
                     return;
                 }
 
-                // Validar que sea del dominio @estrategiasfractal.com
+                // Extraer nombre del email
                 const email = user.userDetails || '';
-                if (!email.endsWith('@estrategiasfractal.com')) {
-                    document.body.innerHTML = `
-                        <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:Montserrat,sans-serif;background:#f5f5f5;">
-                            <div style="text-align:center;background:white;padding:50px 40px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1);max-width:420px;">
-                                <img src="/logo.png" alt="Fractal" style="height:60px;margin-bottom:24px;">
-                                <h1 style="color:#1e3a6e;font-size:20px;margin-bottom:12px;">Acceso no autorizado</h1>
-                                <p style="color:#666;font-size:14px;margin-bottom:28px;line-height:1.5;">
-                                    Solo miembros de <strong>FRACTAL ESTRATEGIAS SOSTENIBLES SAS</strong> pueden acceder a este recurso.
-                                </p>
-                                <a href="/.auth/logout" style="display:inline-block;padding:12px 28px;background:#1e3a6e;color:white;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Cerrar sesión</a>
-                            </div>
-                        </div>
-                    `;
-                    return;
-                }
-
-                // Extraer nombre del email (parte antes del @)
                 const userName = email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
                 document.getElementById('userName').textContent = userName;
 
