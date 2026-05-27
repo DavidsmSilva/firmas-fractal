@@ -29,16 +29,5 @@
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Content-Security-Policy": "default-src 'self' https://*.microsoft.com https://*.azurewebsites.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://cdn-icons-png.flaticon.com https://static.wixstatic.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com"
-  },
-  "auth": {
-    "identityProviders": {
-      "azureActiveDirectory": {
-        "registration": {
-          "openIdIssuer": "https://login.microsoftonline.com/751504e2-fdcc-4a03-8654-f8b4519e2270/v2.0",
-          "clientIdSettingName": "AZURE_CLIENT_ID",
-          "clientSecretSettingName": "AZURE_CLIENT_SECRET"
-        }
-      }
-    }
   }
 }
