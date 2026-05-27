@@ -560,6 +560,20 @@
                 }
                 const data = await res.json();
                 const user = data.clientPrincipal;
+                if (!user) {
+                    window.location.href = '/.auth/login/aad';
+                    return;
+                }
+
+                // Validar que sea del tenant correcto (@estrategiasfractal.com)
+                const TENANT_ID = '751504e2-fdcc-4a03-8654-f8b4519e2270';
+                const tidClaim = (user.claims || []).find(c => c.typ === 'tid');
+                if (!tidClaim || tidClaim.val !== TENANT_ID) {
+                    // No autorizado — cerrar sesión
+                    window.location.href = '/.auth/logout?post_logout_redirect_uri=/';
+                    return;
+                }
+
                 document.getElementById('userName').textContent = user.name || 'Usuario';
 
                 // Buscar email en los claims
