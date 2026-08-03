@@ -7,7 +7,7 @@
     <title>Generador de Firmas - Fractal</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://alcdn.msauth.net/browser/2.38.0/msal-browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.0/lib/msal-browser.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -419,6 +419,17 @@
 
 <body>
 
+    <!-- ─── Pantalla de carga / espera de autenticación (gate duro) ─── -->
+    <div id="appLoader" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#f5f5f5;z-index:9999;font-family:Montserrat,sans-serif;">
+        <div style="text-align:center;">
+            <img src="logo.png" alt="Fractal" style="height:60px;margin-bottom:24px;">
+            <p style="color:#1e3a6e;font-weight:600;font-size:15px;">Verificando acceso...</p>
+        </div>
+    </div>
+
+    <!-- ── Contenido protegido: SOLO visible tras autenticar ── -->
+    <div id="appContent" style="display:none;">
+
     <!-- ─── Barra de usuario autenticado ─── -->
     <div class="auth-bar" id="authBar">
         <div class="auth-bar-user">
@@ -566,32 +577,55 @@
         const msalInstance = new msal.PublicClientApplication(msalConfig);
 
         const dominiosPermitidos = ['@estrategiasfractal.com', '@estrategiasfractalcom.onmicrosoft.com'];
-        const query = new URLSearchParams(window.location.search);
 
-        function renderNoAutorizado() {
+        function renderMensaje(titulo, descripcion) {
             document.body.innerHTML = `
                 <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:Montserrat,sans-serif;background:#f5f5f5;">
                     <div style="text-align:center;background:white;padding:50px 40px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1);max-width:420px;">
                         <img src="logo.png" alt="Fractal" style="height:60px;margin-bottom:24px;">
-                        <h1 style="color:#1e3a6e;font-size:20px;margin-bottom:12px;">Acceso no autorizado</h1>
-                        <p style="color:#666;font-size:14px;margin-bottom:28px;line-height:1.5;">
-                            Solo miembros de <strong>FRACTAL ESTRATEGIAS SOSTENIBLES SAS</strong> pueden acceder a este recurso.
-                        </p>
+                        <h1 style="color:#1e3a6e;font-size:20px;margin-bottom:12px;">${titulo}</h1>
+                        <p style="color:#666;font-size:14px;margin-bottom:28px;line-height:1.5;">${descripcion}</p>
                         <button onclick="logoutAuth()" style="display:inline-block;padding:12px 28px;background:#1e3a6e;color:white;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;border:none;cursor:pointer;font-family:Montserrat,sans-serif;">Cerrar sesión</button>
                     </div>
                 </div>
             `;
         }
 
+        function mostrarBloqueo() {
+            renderMensaje(
+                'Acceso no autorizado',
+                'Solo miembros de <strong>FRACTAL ESTRATEGIAS SOSTENIBLES SAS</strong> pueden acceder a este recurso.'
+            );
+        }
+
+        function mostrarError() {
+            renderMensaje(
+                'Error de acceso',
+                'No se pudo verificar tu sesión. Volvé a intentar o contactá al equipo de TI.'
+            );
+        }
+
         function logoutAuth() {
-            msalInstance.logoutPopup().catch(() => {});
+            const acc = msalInstance.getAllAccounts()[0];
+            if (acc) { msalInstance.logoutPopup(acc).catch(() => {}); }
+            else { window.location.reload(); }
+        }
+
+        function mostrarApp() {
+            document.getElementById('appLoader').style.display = 'none';
+            document.getElementById('appContent').style.display = '';
         }
 
         (async function initAuth() {
             try {
+                // Si MSAL no cargó (CDN caído), bloqueamos sin mostrar nada.
+                if (typeof msal === 'undefined' || !msal.PublicClientApplication) {
+                    mostrarError();
+                    return;
+                }
                 let accounts = msalInstance.getAllAccounts();
                 if (accounts.length === 0) {
-                    // No hay sesión: si venimos de la redirect de Microsoft lo resolvemos
+                    // Manejar retorno de redirect (code en URL) si existe.
                     const resp = await msalInstance.handleRedirectPromise().catch(() => null);
                     const account = resp ? resp.account : msalInstance.getAllAccounts()[0];
                     if (!account) {
@@ -606,14 +640,18 @@
                 document.getElementById('userEmail').textContent = email;
 
                 if (!dominiosPermitidos.some(d => email.endsWith(d))) {
-                    renderNoAutorizado();
+                    document.getElementById('appLoader').style.display = 'none';
+                    mostrarBloqueo();
                     return;
                 }
 
                 const userName = email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
                 document.getElementById('userName').textContent = userName;
+                mostrarApp();
             } catch (err) {
-                console.error('Error al cargar info del usuario:', err);
+                console.error('Error de autenticación:', err);
+                document.getElementById('appLoader').style.display = 'none';
+                mostrarError();
             }
         })();
 
@@ -1118,6 +1156,9 @@ td { border-collapse: collapse; }
             }
         });
     </script>
+
+    </div><!-- /appContent -->
+
 </body>
 
 </html>
