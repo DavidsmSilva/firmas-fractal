@@ -7,6 +7,7 @@
     <title>Generador de Firmas - Fractal</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://alcdn.msauth.net/browser/2.38.0/msal-browser.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -430,7 +431,7 @@
                 <span class="user-email" id="userEmail"></span>
             </div>
         </div>
-        <a href="/.auth/logout" class="auth-bar-logout">
+        <a href="#" onclick="logoutAuth(); return false;" class="auth-bar-logout">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                 <polyline points="16 17 21 12 16 7"/>
@@ -512,7 +513,7 @@
                 <div class="video-container">
                     <video controls preload="metadata">
                         <source
-                            src="/firma-tutorial-comprimida.mp4"
+                            src="firma-tutorial-comprimida.mp4"
                             type="video/mp4">
                         Tu navegador no soporta el reproductor de video.
                     </video>
@@ -550,52 +551,73 @@
     </div>
 
     <script>
-        // ─── Cargar info del usuario autenticado (Easy Auth - Azure SWA) ──
-        (async function loadUserInfo() {
+        // ─── Autenticación con Microsoft (MSAL Browser — GitHub Pages) ──
+        const msalConfig = {
+            auth: {
+                clientId: '0b7019bc-4370-4cc4-9d7d-3860bc5a5cae',
+                authority: 'https://login.microsoftonline.com/751504e2-fdcc-4a03-8654-f8b4519e2270',
+                redirectUri: window.location.origin + window.location.pathname
+            },
+            cache: {
+                cacheLocation: 'sessionStorage',
+                storeAuthStateInCookie: false
+            }
+        };
+        const msalInstance = new msal.PublicClientApplication(msalConfig);
+
+        const dominiosPermitidos = ['@estrategiasfractal.com', '@estrategiasfractalcom.onmicrosoft.com'];
+        const query = new URLSearchParams(window.location.search);
+
+        function renderNoAutorizado() {
+            document.body.innerHTML = `
+                <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:Montserrat,sans-serif;background:#f5f5f5;">
+                    <div style="text-align:center;background:white;padding:50px 40px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1);max-width:420px;">
+                        <img src="logo.png" alt="Fractal" style="height:60px;margin-bottom:24px;">
+                        <h1 style="color:#1e3a6e;font-size:20px;margin-bottom:12px;">Acceso no autorizado</h1>
+                        <p style="color:#666;font-size:14px;margin-bottom:28px;line-height:1.5;">
+                            Solo miembros de <strong>FRACTAL ESTRATEGIAS SOSTENIBLES SAS</strong> pueden acceder a este recurso.
+                        </p>
+                        <button onclick="logoutAuth()" style="display:inline-block;padding:12px 28px;background:#1e3a6e;color:white;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;border:none;cursor:pointer;font-family:Montserrat,sans-serif;">Cerrar sesión</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function logoutAuth() {
+            msalInstance.logoutPopup().catch(() => {});
+        }
+
+        (async function initAuth() {
             try {
-                const res = await fetch('/.auth/me');
-                if (!res.ok) {
-                    window.location.href = '/.auth/login/aad';
-                    return;
+                let accounts = msalInstance.getAllAccounts();
+                if (accounts.length === 0) {
+                    // No hay sesión: si venimos de la redirect de Microsoft lo resolvemos
+                    const resp = await msalInstance.handleRedirectPromise().catch(() => null);
+                    const account = resp ? resp.account : msalInstance.getAllAccounts()[0];
+                    if (!account) {
+                        await msalInstance.loginRedirect({ scopes: ['User.Read'] });
+                        return;
+                    }
+                    accounts = [account];
                 }
-                const data = await res.json();
-                const user = data.clientPrincipal;
-                if (!user) {
-                    window.location.href = '/.auth/login/aad';
+
+                const account = accounts[0];
+                const email = (account.username || '').toLowerCase();
+                document.getElementById('userEmail').textContent = email;
+
+                if (!dominiosPermitidos.some(d => email.endsWith(d))) {
+                    renderNoAutorizado();
                     return;
                 }
 
-                // Validar que sea miembro de la organización
-                const email = user.userDetails || '';
-                const dominiosPermitidos = ['@estrategiasfractal.com', '@estrategiasfractalcom.onmicrosoft.com'];
-                const esMiembro = dominiosPermitidos.some(d => email.toLowerCase().endsWith(d));
-                
-                if (!esMiembro) {
-                    document.body.innerHTML = `
-                        <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:Montserrat,sans-serif;background:#f5f5f5;">
-                            <div style="text-align:center;background:white;padding:50px 40px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1);max-width:420px;">
-                                <img src="/logo.png" alt="Fractal" style="height:60px;margin-bottom:24px;">
-                                <h1 style="color:#1e3a6e;font-size:20px;margin-bottom:12px;">Acceso no autorizado</h1>
-                                <p style="color:#666;font-size:14px;margin-bottom:28px;line-height:1.5;">
-                                    Solo miembros de <strong>FRACTAL ESTRATEGIAS SOSTENIBLES SAS</strong> pueden acceder a este recurso.
-                                </p>
-                                <a href="/.auth/logout" style="display:inline-block;padding:12px 28px;background:#1e3a6e;color:white;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Cerrar sesión</a>
-                            </div>
-                        </div>
-                    `;
-                    return;
-                }
-
-                // Extraer nombre del email
                 const userName = email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
                 document.getElementById('userName').textContent = userName;
-
-                // Mostrar email
-                document.getElementById('userEmail').textContent = email;
             } catch (err) {
                 console.error('Error al cargar info del usuario:', err);
             }
         })();
+
+        window.logoutAuth = logoutAuth;
 
 let generatedHtml = '';
         let currentPhotoDataUrl = '';
