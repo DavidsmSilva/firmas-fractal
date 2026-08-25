@@ -937,6 +937,23 @@ function calcNombreFontSize(nombre) {
     return Math.round(fontSize * 100) / 100;
 }
 
+// Calcula el font-size del correo: base 10.67px, se achica si el correo es muy largo
+// para que nunca salte de línea (la firma se estira si igual no alcanza).
+function calcCorreoFontSize(correo) {
+    const MAX_WIDTH = 148;
+    const MAX_SIZE = 10.67;
+    const MIN_SIZE = 8;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    let fontSize = MAX_SIZE;
+    while (fontSize > MIN_SIZE) {
+        ctx.font = `400 ${fontSize}px 'Segoe UI', Arial, sans-serif`;
+        if (ctx.measureText(correo).width <= MAX_WIDTH) break;
+        fontSize -= 0.25;
+    }
+    return Math.round(fontSize * 100) / 100;
+}
+
 // Submit del formulario
 let generatedHtml = '';
 
@@ -980,11 +997,12 @@ document.getElementById('firmaForm').addEventListener('submit', async function (
         // Foto circular con marco tricolor rasterizado (compatible con todos los clientes de correo)
         const fotoCircular = await generarFotoConMarco(croppedDataUrl);
         const nombreFontSize = calcNombreFontSize(nombre);
+        const correoFontSize = calcCorreoFontSize(correo);
 
         // Íconos y logos ya embebidos como constantes base64 (compatibilidad Outlook)
         generatedHtml = generateFirmaHtml(
             nombre, rol, correo, telefono, linkedin,
-            fotoCircular, nombreFontSize,
+            fotoCircular, nombreFontSize, correoFontSize,
             ICO_WHATSAPP, ICO_CORREO, ICO_LINKEDIN,
             ICO_SOSTENIBILIDAD, ICO_OBJETIVO, ICO_CONFIGURACION,
             ICO_BCORP_BLANCO, ICO_LOGO_VERTICAL
@@ -1025,7 +1043,7 @@ document.getElementById('firmaForm').addEventListener('submit', async function (
 // ══════════════════════════════════════════════════
 function generateFirmaHtml(
     nombre, rol, correo, telefono, linkedin,
-    fotoSrc, nombreFontSize,
+    fotoSrc, nombreFontSize, correoFontSize,
     icoWhatsapp, icoCorreo, icoLinkedin,
     icoSostenibilidad, icoObjetivo, icoConfiguracion,
     logoBCorpBlanco, logoVertical
@@ -1081,7 +1099,7 @@ td{border-collapse:collapse;}
                     <!-- Nombre -->
                     <tr>
                       <td style="padding-bottom:3px;">
-                        <span style="font-size:${nombreFontSize}px;font-weight:700;color:#1a2a5e;font-family:'Segoe UI',Arial,sans-serif;line-height:1.2;">
+                        <span style="font-size:${nombreFontSize}px;font-weight:700;color:#1a2a5e;font-family:'Segoe UI',Arial,sans-serif;line-height:1.2;white-space:nowrap;">
                           ${nombre}
                         </span>
                       </td>
@@ -1140,7 +1158,7 @@ td{border-collapse:collapse;}
                             </td>
                             <td style="vertical-align:middle;">
                               <a href="mailto:${correo}"
-                                style="color:#333333;text-decoration:none;font-size:10.67px;font-family:'Segoe UI',Arial,sans-serif;">
+                                style="color:#333333;text-decoration:none;font-size:${correoFontSize}px;font-family:'Segoe UI',Arial,sans-serif;white-space:nowrap;">
                                 ${correo}
                               </a>
                             </td>
@@ -1191,8 +1209,8 @@ td{border-collapse:collapse;}
                           style="display:block;border:0;">
                       </td>
                       <td style="width:1px;background:#cccccc;font-size:0;">&nbsp;</td>
-                      <td style="vertical-align:middle;padding-left:9px;max-width:131px;">
-                        <span style="font-size:10.67px;color:#1a2a5e;line-height:1.25;font-family:'Segoe UI',Arial,sans-serif;">
+                      <td style="vertical-align:middle;padding-left:9px;">
+                        <span style="font-size:10.67px;color:#1a2a5e;line-height:1.25;font-family:'Segoe UI',Arial,sans-serif;white-space:nowrap;">
                           Hacemos sostenible la <span style="color:#2e7d32;font-weight:600;">econom&#237;a circular.</span>
                         </span>
                       </td>
