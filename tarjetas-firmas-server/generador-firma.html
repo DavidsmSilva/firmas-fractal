@@ -563,7 +563,11 @@ function mostrarApp() {
                 provider: 'azure',
                 options: {
                     scopes: 'email',
-                    redirectTo: window.location.origin + window.location.pathname
+                    redirectTo: window.location.origin + window.location.pathname,
+                    // Fuerza que Microsoft pida credenciales de nuevo en vez de
+                    // reutilizar su propia sesión SSO silenciosa del navegador
+                    // (si no, "cerrar sesión" vuelve a entrar solo).
+                    queryParams: { prompt: 'login' }
                 }
             });
             return;
