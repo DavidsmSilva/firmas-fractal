@@ -23,3 +23,6 @@ Thumbs.db
 # Servidor
 tarjetas-firmas-server/node_modules/
 tarjetas-firmas-server/.env
+
+# Estado local del CLI de Supabase (vinculación de proyecto, no es parte del código)
+supabase/.temp/

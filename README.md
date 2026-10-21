@@ -730,3 +730,16 @@ curl -I https://firma.estrategiasfractal.com
 - **DEV_MODE:** Diseñado exclusivamente para desarrollo local. **Nunca activar en producción** ya que deshabilita la autenticación.
 - **Commit history:** El repositorio utiliza [Conventional Commits](https://www.conventionalcommits.org/) para mantener un historial claro.
 - **Soporte:** Cualquier duda técnica, abrir un issue en el repositorio de GitHub o contactar al desarrollador.
+
+---
+
+## Configuración de Supabase + Azure AD (checklist manual)
+
+1. Crear un proyecto en Supabase.
+2. Correr tarjetas-firmas-server/supabase/schema.sql en el SQL Editor del proyecto.
+3. En Authentication → Providers: habilitar "Azure" y deshabilitar "Email" (y cualquier otro proveedor que no sea Azure).
+4. Cargar en el proveedor Azure de Supabase el Client ID y Client Secret de la app registrada en Azure AD.
+5. Como Azure Tenant URL usar `https://login.microsoftonline.com/<tenant-id>/v2.0` (restringe el login a un solo tenant, no "common").
+6. En Azure Portal, configurar el Redirect URI de la app para que apunte a `https://TU-PROYECTO.supabase.co/auth/v1/callback`.
+7. Confirmar que el App Registration está en modo "Accounts in this organizational directory only (single tenant)".
+8. Reemplazar SUPABASE_URL y SUPABASE_ANON_KEY en tarjetas-firmas-server/generador-firma.html con los valores reales del proyecto (la anon key es pública, no hace falta ocultarla — la seguridad la da la RLS policy).
