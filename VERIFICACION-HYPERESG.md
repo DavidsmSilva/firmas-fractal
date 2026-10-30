@@ -52,3 +52,13 @@ además de proveedor Azure.
 El tenant antiguo del README está desactualizado: la redirección Azure actual usa
 `751504e2-fdcc-4a03-8654-f8b4519e2270`, coincidente con las identidades Azure
 existentes. No se utilizó el tenant antiguo para restringir usuarios.
+
+## Corrección del acceso al selector de marca
+
+La raíz y el retorno OAuth de Fractal abren `generador-hyperesg.html`, donde se
+muestran ambos logos antes de elegir marca. La raíz conserva la consulta y el
+fragmento de callbacks anteriores. El enlace Cambiar marca reutiliza la sesión.
+Se añadió la URL exacta del selector al allowlist de Supabase conservando las
+anteriores; los diseños, registros y políticas MFA permanecen sin cambios.
+Validación: 9 pruebas de auditoría y 5 de rutas pasan. La comprobación visual usa
+un navegador aislado con autenticación simulada; no demuestra MFA real.
