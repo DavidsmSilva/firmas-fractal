@@ -1,0 +1,1 @@
+-- Esquema reemplazado por migration-audit.sql en esta misma carpeta. Ejecutar el contenido completo de esa migración en SQL Editor: crea HyperESG, preserva Fractal y aplica identidad/fecha servidor, OAuth y permisos INSERT-only.
