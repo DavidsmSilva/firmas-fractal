@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -334,6 +334,7 @@
             border: none;
         }
     </style>
+    <script src="registro-firmas.js"></script>
 </head>
 <body>
 
@@ -375,6 +376,7 @@
         <!-- ─── FORMULARIO ─── -->
         <div class="form-section">
             <h2>Datos de la Firma</h2>
+            <p><a href="generador-hyperesg.html">Crear firma HYPERESG</a></p>
             <form id="firmaForm">
                 <div class="form-group">
                     <label for="nombre">Nombre Completo *</label>
@@ -573,7 +575,9 @@ function mostrarApp() {
             return;
         }
 
-        const user = session.user;
+        const { data: verified, error: verificationError } = await supabaseClient.auth.getUser();
+        if (verificationError || !verified.user) throw new Error('Sesión no válida');
+        const user = verified.user;
         const email = (user.email || '').toLowerCase();
         const provider = (user.app_metadata && user.app_metadata.provider) || '';
 
@@ -809,6 +813,7 @@ document.getElementById('cropApply').addEventListener('click', () => {
     ctx.restore();
 
     croppedDataUrl = off.toDataURL('image/png');
+    registroFirmas.invalidar();
     document.getElementById('photoPreviewImg').src = croppedDataUrl;
     document.getElementById('photoPreview').style.display = 'flex';
     document.getElementById('uploadPhotoBtn').classList.add('has-photo');
@@ -845,6 +850,7 @@ document.getElementById('photoFile').addEventListener('change', function (e) {
 });
 document.getElementById('removePhotoBtn').addEventListener('click', () => {
     croppedDataUrl = '';
+    registroFirmas.invalidar();
     cropImg = null;
     document.getElementById('photoPreview').style.display = 'none';
     document.getElementById('uploadPhotoBtn').classList.remove('has-photo');
@@ -956,6 +962,33 @@ function calcCorreoFontSize(correo) {
 
 // Submit del formulario
 let generatedHtml = '';
+function datosIngresados() {
+    const datos = {};
+    for (const campo of ['nombre', 'rol', 'correo', 'telefono', 'linkedin']) {
+        datos[campo] = document.getElementById(campo).value;
+    }
+    datos.foto_perfil = croppedDataUrl || null;
+    datos.plantilla = 'fractal';
+    return datos;
+}
+const registroFirmas = crearRegistroFirmas({
+    client: supabaseClient,
+    snapshot: datosIngresados,
+    invalidate() {
+        generatedHtml = '';
+        document.getElementById('copyBtn').disabled = true;
+        document.getElementById('downloadImgBtn').disabled = true;
+        document.getElementById('successMessage').style.display = 'none';
+        document.getElementById('previewIframe').srcdoc = '';
+        document.getElementById('previewIframe').style.display = 'none';
+        document.getElementById('previewPlaceholder').style.display = '';
+    }
+});
+document.getElementById('firmaForm').addEventListener('input', () => registroFirmas.invalidar());
+document.getElementById('firmaForm').addEventListener('change', () => registroFirmas.invalidar());
+supabaseClient.auth.onAuthStateChange((event) => {
+    if (event === 'SIGNED_OUT') { currentUser = null; registroFirmas.invalidar(); }
+});
 
 // Escala la vista previa para que la firma entre completa en el recuadro,
 // sin scroll horizontal, sin alterar el HTML real de la firma (solo la visual del preview).
@@ -976,6 +1009,9 @@ window.addEventListener('resize', fitPreviewToBox);
 document.getElementById('firmaForm').addEventListener('submit', async function (e) {
     e.preventDefault();
 
+    try { if (!registroFirmas.iniciar(currentUser)) return; }
+    catch (error) { alert(error.message); return; }
+
     const nombre   = document.getElementById('nombre').value.trim();
     const rol      = document.getElementById('rol').value.trim();
     const correo   = document.getElementById('correo').value.trim();
@@ -986,6 +1022,7 @@ document.getElementById('firmaForm').addEventListener('submit', async function (
 
     if (!croppedDataUrl) {
         alert('Selecciona y ajusta la foto de perfil primero.');
+        registroFirmas.finalizar();
         return;
     }
 
@@ -1008,6 +1045,9 @@ document.getElementById('firmaForm').addEventListener('submit', async function (
             ICO_BCORP_BLANCO, ICO_LOGO_VERTICAL
         );
 
+        const guardado = await registroFirmas.guardar('firmas_generadas', { nombre, rol, correo, telefono, linkedin });
+        if (!guardado) { generatedHtml = ''; return; }
+
         const iframe = document.getElementById('previewIframe');
         iframe.srcdoc = generatedHtml;
         iframe.style.display = 'block';
@@ -1028,20 +1068,14 @@ document.getElementById('firmaForm').addEventListener('submit', async function (
         document.getElementById('copyBtn').disabled = false;
         document.getElementById('downloadImgBtn').disabled = false;
 
-        if (currentUser) {
-            const { error: insertError } = await supabaseClient
-                .from('firmas_generadas')
-                .insert({
-                    user_email: currentUser.email,
-                    nombre, rol, correo, telefono, linkedin
-                });
-            if (insertError) console.error('No se pudo registrar la generación:', insertError);
-        }
+
 
     } catch (err) {
         console.error(err);
-        alert('Error al generar la firma. Intenta de nuevo.');
+        registroFirmas.invalidar();
+        alert(err.message || 'Error al generar la firma. Intenta de nuevo.');
     } finally {
+        registroFirmas.finalizar();
         btn.disabled = false;
         btn.textContent = 'Generar Firma';
     }
@@ -1368,7 +1402,7 @@ td{border-collapse:collapse;}
 // COPIAR FIRMA
 // ══════════════════════════════════════════════════
 document.getElementById('copyBtn').addEventListener('click', async function () {
-    if (!generatedHtml) { alert('Genera la firma primero.'); return; }
+    if (!generatedHtml || !registroFirmas.puedeExportar(currentUser)) { alert('Genera y registra la firma primero.'); return; }
     try {
         const blob = new Blob([generatedHtml], { type: 'text/html' });
         const iframe = document.getElementById('previewIframe');
@@ -1383,6 +1417,7 @@ document.getElementById('copyBtn').addEventListener('click', async function () {
     } catch (err) {
         try {
             const iframe = document.getElementById('previewIframe');
+            if (!generatedHtml || !registroFirmas.puedeExportar(currentUser)) return;
             const range = document.createRange();
             range.selectNodeContents(iframe.contentDocument.body);
             window.getSelection().removeAllRanges();
@@ -1400,6 +1435,7 @@ document.getElementById('copyBtn').addEventListener('click', async function () {
 // DESCARGAR COMO IMAGEN
 // ══════════════════════════════════════════════════
 document.getElementById('downloadImgBtn').addEventListener('click', async function () {
+    if (!generatedHtml || !registroFirmas.puedeExportar(currentUser)) { alert('Genera y registra la firma primero.'); return; }
     const nombre = document.getElementById('nombre').value.trim();
     const iframe = document.getElementById('previewIframe');
     const iframeDoc = iframe.contentDocument;
@@ -1422,6 +1458,7 @@ document.getElementById('downloadImgBtn').addEventListener('click', async functi
         const link = document.createElement('a');
         link.href = canvas.toDataURL('image/png');
         link.download = 'firma_' + nombre.toLowerCase().replace(/\s+/g, '_') + '.png';
+        if (!generatedHtml || !registroFirmas.puedeExportar(currentUser)) return;
         link.click();
     } catch (err) {
         alert('Error al generar imagen. Intenta copiar la firma directamente.');
