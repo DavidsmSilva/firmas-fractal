@@ -57,8 +57,16 @@ existentes. No se utilizó el tenant antiguo para restringir usuarios.
 
 La raíz y el retorno OAuth de Fractal abren `generador-hyperesg.html`, donde se
 muestran ambos logos antes de elegir marca. La raíz conserva la consulta y el
-fragmento de callbacks anteriores. El enlace Cambiar marca reutiliza la sesión.
+fragmento de callbacks anteriores. La selección de marca reutiliza la sesión.
 Se añadió la URL exacta del selector al allowlist de Supabase conservando las
 anteriores; los diseños, registros y políticas MFA permanecen sin cambios.
 Validación: 9 pruebas de auditoría y 5 de rutas pasan. La comprobación visual usa
 un navegador aislado con autenticación simulada; no demuestra MFA real.
+
+
+## Activación completa de las plantillas
+
+Las dos fichas HyperESG son botones nativos: imagen, título y CTA abren el
+generador elegido con ratón o Enter/Espacio. El CTA visual es un span para evitar
+botones anidados y doble activación. Se retiró el enlace Cambiar marca del panel
+Fractal por indicación del usuario. Auditoría, autenticación y diseños conservados.
