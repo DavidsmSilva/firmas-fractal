@@ -376,7 +376,7 @@
         <!-- ─── FORMULARIO ─── -->
         <div class="form-section">
             <h2>Datos de la Firma</h2>
-            <p><a href="generador-hyperesg.html">Crear firma HYPERESG</a></p>
+            <p><a href="generador-hyperesg.html">&larr; Cambiar marca: Fractal / HYPERESG</a></p>
             <form id="firmaForm">
                 <div class="form-group">
                     <label for="nombre">Nombre Completo *</label>
@@ -565,7 +565,7 @@ function mostrarApp() {
                 provider: 'azure',
                 options: {
                     scopes: 'email',
-                    redirectTo: window.location.origin + window.location.pathname,
+                    redirectTo: new URL('generador-hyperesg.html', window.location.href).href,
                     // Fuerza que Microsoft pida credenciales de nuevo en vez de
                     // reutilizar su propia sesión SSO silenciosa del navegador
                     // (si no, "cerrar sesión" vuelve a entrar solo).
