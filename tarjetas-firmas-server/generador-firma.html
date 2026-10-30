@@ -57,6 +57,14 @@
         }
         .auth-bar-logout:hover { background: #fff0f0; border-color: #ff6b6b; color: #d32f2f; }
 
+        .brand-navigation { max-width: 1200px; margin: 0 auto; }
+        .back-link {
+            display: inline-flex; align-items: center; gap: 6px;
+            color: #565fdc; font-size: 13px; font-weight: 600; font-family: 'Montserrat', sans-serif;
+            text-decoration: none; margin-bottom: 20px; cursor: pointer; background: none; border: none; padding: 0;
+        }
+        .back-link:hover { background: none; text-decoration: underline; }
+
         /* ── Layout ── */
         .container {
             max-width: 1200px;
@@ -371,6 +379,10 @@
         </a>
     </div>
 
+    <div class="brand-navigation">
+        <button type="button" class="back-link" onclick="goToBrandStep()">&larr; Volver</button>
+    </div>
+
     <div class="container">
 
         <!-- ─── FORMULARIO ─── -->
@@ -548,6 +560,10 @@ function mostrarError() {
 async function logoutAuth() {
     await supabaseClient.auth.signOut();
     window.location.reload();
+}
+
+function goToBrandStep() {
+    window.location.assign(new URL('generador-hyperesg.html', window.location.href).href);
 }
 
 function mostrarApp() {
