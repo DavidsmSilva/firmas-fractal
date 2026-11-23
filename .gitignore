@@ -26,3 +26,9 @@ tarjetas-firmas-server/.env
 
 # Estado local del CLI de Supabase (vinculación de proyecto, no es parte del código)
 supabase/.temp/
+
+# Archivos locales de prueba que pueden contener datos de sesión o firmas personales
+/tmp/
+/.codegraph/
+/firma-HYPERESG-*.html
+/tarjetas-firmas-server/*.rar
