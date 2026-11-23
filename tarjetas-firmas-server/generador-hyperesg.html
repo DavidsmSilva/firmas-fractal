@@ -281,7 +281,7 @@
                     <form id="firmaForm">
                         <div class="form-group">
                             <label for="nombre">Nombre Completo *</label>
-                            <input type="text" id="nombre" required placeholder="David Santiago Muñeton Silva">
+                            <input type="text" id="nombre" required placeholder="Nombre y apellidos">
                         </div>
                         <div class="form-group">
                             <label for="rol">Rol / Cargo *</label>
@@ -293,7 +293,7 @@
                         </div>
                         <div class="form-group">
                             <label for="telefono">Número Telefónico *</label>
-                            <input type="tel" id="telefono" required placeholder="+57 3052216381">
+                            <input type="tel" id="telefono" required placeholder="Número con código de país">
                         </div>
                         <div class="form-group">
                             <label for="linkedin">URL de LinkedIn *</label>
@@ -837,7 +837,7 @@ function calcFontSize(text, opts) {
 
 const SIZING = {
     1: { nameMaxW: 420, nameMax: 19, nameMin: 13, mailMaxW: 380, mailMax: 12, mailMin: 9 },
-    2: { nameMaxW: 270, nameMax: 18, nameMin: 12, mailMaxW: 230, mailMax: 12, mailMin: 9 }
+    2: { nameMaxW: 255, nameMax: 18, nameMin: 12, mailMaxW: 220, mailMax: 12, mailMin: 9 }
 };
 
 // ══════════════════════════════════════════════════
@@ -964,13 +964,36 @@ document.getElementById('firmaForm').addEventListener('submit', async function (
 // ══════════════════════════════════════════════════
 // HTML DE LA FIRMA — PLANTILLA 1: EJECUTIVA
 // ══════════════════════════════════════════════════
+function escaparHtml(texto) {
+    return String(texto).replace(/[&<>"']/g, caracter => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[caracter]);
+}
+
+function sinSaltos(texto) {
+    return escaparHtml(texto).replace(/\s+/g, '&nbsp;');
+}
+
+function enlaceLinkedInSeguro(enlace) {
+    let url;
+    try { url = new URL(enlace); }
+    catch { throw new Error('Ingresa un enlace válido de LinkedIn.'); }
+    if (url.protocol !== 'https:' || !/(^|\.)linkedin\.com$/i.test(url.hostname)) {
+        throw new Error('El enlace debe ser HTTPS y del dominio de LinkedIn.');
+    }
+    return escaparHtml(url.href);
+}
+
 function generateFirmaHyperESG1Html(nombre, rol, correo, telefono, linkedin, nombreFontSize, correoFontSize) {
     const waNum = telefono.replace(/\D/g, '');
+    const nombreHtml = escaparHtml(nombre);
+    const correoHtml = escaparHtml(correo);
+    const linkedinHtml = enlaceLinkedInSeguro(linkedin);
     return `<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta charset="UTF-8">
-<title>Firma HyperESG - ${nombre}</title>
+<title>Firma HyperESG - ${nombreHtml}</title>
 <!--[if mso]>
 <style type="text/css">
 table{border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;}
@@ -999,8 +1022,8 @@ td{border-collapse:collapse;}
             <table cellpadding="0" cellspacing="0" border="0">
               <tr>
                 <td nowrap="nowrap" style="padding-bottom:4px;white-space:nowrap;">
-                  <span style="font-size:${nombreFontSize}px;font-weight:700;color:#150a2b;font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;white-space:nowrap;">
-                    ${nombre}
+                  <span style="font-size:${nombreFontSize}px;font-weight:700;color:#150a2b;font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;white-space:nowrap;word-break:keep-all;overflow-wrap:normal;">
+                    ${sinSaltos(nombre)}
                   </span>
                 </td>
               </tr>
@@ -1017,7 +1040,7 @@ td{border-collapse:collapse;}
                     <tr>
                       <td bgcolor="#565fdc" style="padding:4px 13px;border-radius:14px;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
                         <span style="font-size:11px;font-weight:700;color:#ffffff;font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;white-space:nowrap;letter-spacing:.3px;">
-                          ${rol.toUpperCase()}
+                          ${sinSaltos(rol.toUpperCase())}
                         </span>
                       </td>
                     </tr>
@@ -1034,7 +1057,7 @@ td{border-collapse:collapse;}
                       <td style="vertical-align:middle;">
                         <a href="https://wa.me/${waNum}" target="_blank"
                           style="color:#333333;text-decoration:none;font-size:12px;font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;">
-                          ${telefono}
+                          ${sinSaltos(telefono)}
                         </a>
                       </td>
                     </tr>
@@ -1048,10 +1071,10 @@ td{border-collapse:collapse;}
                       <td style="vertical-align:middle;padding-right:8px;">
                         <img src="${ICO_CORREO}" width="20" height="20" alt="Email" style="display:block;border:0;">
                       </td>
-                      <td nowrap="nowrap" style="vertical-align:middle;white-space:nowrap;">
-                        <a href="mailto:${correo}"
-                          style="color:#333333;text-decoration:none;font-size:${correoFontSize}px;font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;white-space:nowrap;">
-                          ${correo}
+                      <td nowrap="nowrap" style="vertical-align:middle;white-space:nowrap;word-break:keep-all;overflow-wrap:normal;">
+                        <a href="mailto:${correoHtml}"
+                          style="color:#333333;text-decoration:none;font-size:${correoFontSize}px;font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;white-space:nowrap;word-break:keep-all;overflow-wrap:normal;">
+                          ${correoHtml}
                         </a>
                       </td>
                     </tr>
@@ -1066,7 +1089,7 @@ td{border-collapse:collapse;}
                         <img src="${ICO_LINKEDIN}" width="20" height="20" alt="LinkedIn" style="display:block;border:0;">
                       </td>
                       <td style="vertical-align:middle;">
-                        <a href="${linkedin}" target="_blank"
+                        <a href="${linkedinHtml}" target="_blank"
                           style="color:#0a66c2;text-decoration:none;font-size:12px;font-weight:600;font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;">
                           LinkedIn
                         </a>
@@ -1081,9 +1104,9 @@ td{border-collapse:collapse;}
               <tr><td height="1" bgcolor="#d8d9ef" style="font-size:0;line-height:0;">&nbsp;</td></tr>
             </table>
 
-            <table cellpadding="0" cellspacing="0" border="0" style="margin-top:10px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="440" style="width:440px;margin-top:10px;">
               <tr>
-                <td style="vertical-align:middle;padding-right:8px;">
+                <td width="16" style="vertical-align:top;width:16px;padding-right:8px;">
                   <table cellpadding="0" cellspacing="0" border="0">
                     <tr><td width="16" height="5" bgcolor="#7ed292" style="border-radius:2px;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:0;line-height:0;">&nbsp;</td></tr>
                     <tr><td height="2" style="font-size:0;line-height:0;">&nbsp;</td></tr>
@@ -1092,15 +1115,15 @@ td{border-collapse:collapse;}
                     <tr><td width="16" height="5" bgcolor="#7ed292" style="border-radius:2px;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:0;line-height:0;">&nbsp;</td></tr>
                   </table>
                 </td>
-                <td nowrap="nowrap" style="vertical-align:middle;white-space:nowrap;padding-right:12px;">
-                  <span style="font-size:10px;color:#150a2b;font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;white-space:nowrap;">
-                    Estrategias posconsumo &middot; Circularidad &middot; Trazabilidad
+                <td width="265" nowrap="nowrap" style="vertical-align:top;width:265px;white-space:nowrap;word-break:keep-all;overflow-wrap:normal;">
+                  <span style="font-size:9.5px;color:#150a2b;font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;white-space:nowrap;word-break:keep-all;overflow-wrap:normal;">
+                    Estrategias&nbsp;posconsumo&nbsp;&middot;&nbsp;Circularidad&nbsp;&middot;&nbsp;Trazabilidad
                   </span>
                 </td>
-                <td nowrap="nowrap" style="vertical-align:middle;white-space:nowrap;">
+                <td nowrap="nowrap" style="vertical-align:top;padding-left:10px;white-space:nowrap;">
                   <table cellpadding="0" cellspacing="0" border="0">
                     <tr>
-                      <td nowrap="nowrap" style="white-space:nowrap;padding-bottom:2px;">
+                      <td nowrap="nowrap" style="white-space:nowrap;">
                         <a href="https://www.hyperesg.com.mx/" target="_blank"
                           style="color:#565fdc;font-size:11px;font-weight:700;text-decoration:none;font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;white-space:nowrap;">
                           www.hyperesg.com.mx
@@ -1108,10 +1131,10 @@ td{border-collapse:collapse;}
                       </td>
                     </tr>
                     <tr>
-                      <td nowrap="nowrap" style="white-space:nowrap;">
+                      <td nowrap="nowrap" style="padding-top:1px;white-space:nowrap;">
                         <a href="#" target="_blank"
                           style="color:#9a9ab8;font-size:9px;text-decoration:none;font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;white-space:nowrap;">
-                          Aviso de confidencialidad
+                          Aviso&nbsp;de&nbsp;confidencialidad
                         </a>
                       </td>
                     </tr>
@@ -1137,11 +1160,14 @@ td{border-collapse:collapse;}
 // ══════════════════════════════════════════════════
 function generateFirmaHyperESG2Html(nombre, rol, correo, telefono, linkedin, fotoSrc, nombreFontSize, correoFontSize) {
     const waNum = telefono.replace(/\D/g, '');
+    const nombreHtml = escaparHtml(nombre);
+    const correoHtml = escaparHtml(correo);
+    const linkedinHtml = enlaceLinkedInSeguro(linkedin);
     return `<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta charset="UTF-8">
-<title>Firma HyperESG - ${nombre}</title>
+<title>Firma HyperESG - ${nombreHtml}</title>
 <!--[if mso]>
 <style type="text/css">
 table{border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;}
@@ -1151,8 +1177,8 @@ td{border-collapse:collapse;}
 </head>
 <body style="margin:0;padding:0;background:#ffffff;">
 
-<table cellpadding="0" cellspacing="0" border="0" width="680"
-  style="font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;font-size:10px;color:#333333;background:#ffffff;width:680px;">
+<table cellpadding="0" cellspacing="0" border="0" width="760"
+  style="font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;font-size:10px;color:#333333;background:#ffffff;width:760px;">
 
   <tr>
     <td style="padding:18px 20px 14px 20px;">
@@ -1160,15 +1186,15 @@ td{border-collapse:collapse;}
         <tr>
 
           <td width="150" style="vertical-align:middle;width:150px;padding-right:18px;">
-            <img src="${fotoSrc}" alt="${nombre}" width="138" height="138" style="display:block;border:0;">
+            <img src="${fotoSrc}" alt="${nombreHtml}" width="138" height="138" style="display:block;border:0;">
           </td>
 
           <td style="vertical-align:middle;padding-right:18px;">
             <table cellpadding="0" cellspacing="0" border="0">
               <tr>
                 <td nowrap="nowrap" style="padding-bottom:4px;white-space:nowrap;">
-                  <span style="font-size:${nombreFontSize}px;font-weight:700;color:#150a2b;font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;white-space:nowrap;">
-                    ${nombre}
+                  <span style="font-size:${nombreFontSize}px;font-weight:700;color:#150a2b;font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;white-space:nowrap;word-break:keep-all;overflow-wrap:normal;">
+                    ${sinSaltos(nombre)}
                   </span>
                 </td>
               </tr>
@@ -1185,7 +1211,7 @@ td{border-collapse:collapse;}
                     <tr>
                       <td bgcolor="#565fdc" style="padding:4px 13px;border-radius:14px;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
                         <span style="font-size:11px;font-weight:700;color:#ffffff;font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;white-space:nowrap;letter-spacing:.3px;">
-                          ${rol.toUpperCase()}
+                          ${sinSaltos(rol.toUpperCase())}
                         </span>
                       </td>
                     </tr>
@@ -1202,7 +1228,7 @@ td{border-collapse:collapse;}
                       <td style="vertical-align:middle;">
                         <a href="https://wa.me/${waNum}" target="_blank"
                           style="color:#333333;text-decoration:none;font-size:12px;font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;">
-                          ${telefono}
+                          ${sinSaltos(telefono)}
                         </a>
                       </td>
                     </tr>
@@ -1216,10 +1242,10 @@ td{border-collapse:collapse;}
                       <td style="vertical-align:middle;padding-right:8px;">
                         <img src="${ICO_CORREO}" width="20" height="20" alt="Email" style="display:block;border:0;">
                       </td>
-                      <td nowrap="nowrap" style="vertical-align:middle;white-space:nowrap;">
-                        <a href="mailto:${correo}"
-                          style="color:#333333;text-decoration:none;font-size:${correoFontSize}px;font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;white-space:nowrap;">
-                          ${correo}
+                      <td nowrap="nowrap" style="vertical-align:middle;white-space:nowrap;word-break:keep-all;overflow-wrap:normal;">
+                        <a href="mailto:${correoHtml}"
+                          style="color:#333333;text-decoration:none;font-size:${correoFontSize}px;font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;white-space:nowrap;word-break:keep-all;overflow-wrap:normal;">
+                          ${correoHtml}
                         </a>
                       </td>
                     </tr>
@@ -1234,7 +1260,7 @@ td{border-collapse:collapse;}
                         <img src="${ICO_LINKEDIN}" width="20" height="20" alt="LinkedIn" style="display:block;border:0;">
                       </td>
                       <td style="vertical-align:middle;">
-                        <a href="${linkedin}" target="_blank"
+                        <a href="${linkedinHtml}" target="_blank"
                           style="color:#0a66c2;text-decoration:none;font-size:12px;font-weight:600;font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;">
                           LinkedIn
                         </a>
@@ -1246,13 +1272,13 @@ td{border-collapse:collapse;}
             </table>
           </td>
 
-          <td style="vertical-align:top;text-align:right;">
+          <td width="275" style="vertical-align:top;text-align:right;width:275px;white-space:nowrap;">
             <img src="${LOGO_HYPERESG}" alt="HyperESG" width="150" style="display:block;border:0;margin-left:auto;">
-            <table cellpadding="0" cellspacing="0" border="0" style="margin-left:auto;margin-top:8px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="275" style="width:275px;margin-left:auto;margin-top:8px;">
               <tr>
-                <td style="text-align:right;">
-                  <span style="font-size:11px;color:#150a2b;font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;white-space:nowrap;">
-                    Estrategias posconsumo &bull; Circularidad &bull; Trazabilidad
+                <td nowrap="nowrap" style="text-align:right;white-space:nowrap;word-break:keep-all;overflow-wrap:normal;">
+                  <span style="font-size:10px;color:#150a2b;font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;white-space:nowrap;word-break:keep-all;overflow-wrap:normal;">
+                    Estrategias&nbsp;posconsumo&nbsp;&bull;&nbsp;Circularidad&nbsp;&bull;&nbsp;Trazabilidad
                   </span>
                 </td>
               </tr>
@@ -1290,7 +1316,7 @@ td{border-collapse:collapse;}
                 <td style="vertical-align:middle;padding-left:14px;white-space:nowrap;">
                   <a href="#" target="_blank"
                     style="color:#e3e4fb;font-size:10px;text-decoration:none;font-family:'Alte Haas Grotesk','Segoe UI',Arial,sans-serif;">
-                    Aviso de confidencialidad
+                    Aviso&nbsp;de&nbsp;confidencialidad
                   </a>
                 </td>
               </tr>
